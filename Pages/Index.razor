@@ -1,0 +1,45 @@
+@page "/events"
+@using EventPlanner.Services
+@inject IEventService EventService
+
+@inject EventPlanner.Services.IEventService EventService
+
+
+<h3>Events</h3>
+
+@if (_events is null)
+{
+    <p>Bezig met laden...</p>
+}
+else if (_events.Count == 0)
+{
+    <p>Geen events gevonden.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var e in _events)
+        {
+            <a class="list-group-item list-group-item-action" href="@($"/event/{e.Id}")">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@e.Name</h5>
+                    <small>@e.Date.ToString("dd-MM-yyyy")</small>
+                </div>
+                <p class="mb-1">@e.Location</p>
+                @if (!string.IsNullOrWhiteSpace(e.Description))
+                {
+                    <small>@e.Description</small>
+                }
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<EventPlanner.Models.EventItem>? _events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _events = await EventService.GetEventsAsync();
+    }
+}

@@ -1,0 +1,137 @@
+@page "/event/{Id:guid}"
+@using EventPlanner.Models
+@inject EventPlanner.Services.IEventService EventService
+@inject EventPlanner.Services.IRegistrationService RegistrationService
+
+@using System.ComponentModel.DataAnnotations
+
+<h3>Event details</h3>
+
+@if (_event is null)
+{
+    <p>Event niet gevonden.</p>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h4 class="card-title">@_event.Name</h4>
+            <p class="card-text">
+                <strong>Datum:</strong> @_event.Date.ToString("dd-MM-yyyy")<br />
+                <strong>Plaats:</strong> @_event.Location
+            </p>
+            @if (!string.IsNullOrWhiteSpace(_event.Description))
+            {
+                <p>@_event.Description</p>
+            }
+        </div>
+    </div>
+
+    <h4>Aanmelden</h4>
+
+    @if (_successMessage is not null)
+    {
+        <div class="alert alert-success" role="alert">@_successMessage</div>
+    }
+
+    <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Naam</label>
+            <InputText class="form-control" @bind-Value="_model.AttendeeName" />
+            <ValidationMessage For="@(() => _model.AttendeeName)" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">E‑mail</label>
+            <InputText class="form-control" @bind-Value="_model.Email" />
+            <ValidationMessage For="@(() => _model.Email)" />
+        </div>
+
+        <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">
+            @(_isSubmitting ? "Bezig..." : "Aanmelden")
+        </button>
+    </EditForm>
+
+    <h5 class="mt-4">Reeds aangemeld</h5>
+    @if (_registrations is null)
+    {
+        <p>Laden...</p>
+    }
+    else if (_registrations.Count == 0)
+    {
+        <p>Nog geen aanmeldingen.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var r in _registrations)
+            {
+                <li class="list-group-item">
+                    <strong>@r.AttendeeName</strong> — @r.Email
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private EventItem? _event;
+    private RegistrationInput _model = new();
+    private bool _isSubmitting;
+    private string? _successMessage;
+    private IReadOnlyList<Registration>? _registrations;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _event = await EventService.GetEventAsync(Id);
+        if (_event is not null)
+        {
+            _model = new RegistrationInput(); // reset formulier
+            await LoadRegistrations();
+        }
+    }
+
+    private async Task LoadRegistrations()
+    {
+        _registrations = await RegistrationService.GetRegistrationsForEventAsync(Id);
+        StateHasChanged();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (_event is null) return;
+        _isSubmitting = true;
+        _successMessage = null;
+
+        var reg = new Registration
+        {
+            EventId = _event.Id,
+            AttendeeName = _model.AttendeeName.Trim(),
+            Email = _model.Email.Trim()
+        };
+
+        await RegistrationService.RegisterAsync(reg);
+
+        _isSubmitting = false;
+        _successMessage = "Je aanmelding is ontvangen!";
+        _model = new RegistrationInput(); // formulier leegmaken
+        await LoadRegistrations();
+    }
+
+    public class RegistrationInput
+    {
+        [Required(ErrorMessage = "Naam is verplicht")]
+        [StringLength(100, ErrorMessage = "Maximaal 100 tekens")]
+        public string AttendeeName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "E‑mail is verplicht")]
+        [EmailAddress(ErrorMessage = "Ongeldig e‑mailadres")]
+        [StringLength(200, ErrorMessage = "Maximaal 200 tekens")]
+        public string Email { get; set; } = string.Empty;
+    }
+}

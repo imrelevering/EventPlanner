@@ -27,7 +27,7 @@ else
         </div>
     </div>
 
-    <h4>Aanmelden</h4>
+    <h4>Register</h4>
 
     @if (_successMessage is not null)
     {
@@ -39,7 +39,7 @@ else
         <ValidationSummary />
 
         <div class="mb-3">
-            <label class="form-label">Naam</label>
+            <label class="form-label">Name</label>
             <InputText class="form-control" @bind-Value="_model.AttendeeName" />
             <ValidationMessage For="@(() => _model.AttendeeName)" />
         </div>
@@ -51,18 +51,18 @@ else
         </div>
 
         <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">
-            @(_isSubmitting ? "Bezig..." : "Aanmelden")
+            @(_isSubmitting ? "Busy..." : "Register")
         </button>
     </EditForm>
 
-    <h5 class="mt-4">Reeds aangemeld</h5>
+    <h5 class="mt-4">Already Registered</h5>
     @if (_registrations is null)
     {
         <p>Laden...</p>
     }
     else if (_registrations.Count == 0)
     {
-        <p>Nog geen aanmeldingen.</p>
+        <p>No registrations yet.</p>
     }
     else
     {
@@ -118,20 +118,20 @@ else
         await RegistrationService.RegisterAsync(reg);
 
         _isSubmitting = false;
-        _successMessage = "Je aanmelding is ontvangen!";
+        _successMessage = "Your Registration in received";
         _model = new RegistrationInput(); // formulier leegmaken
         await LoadRegistrations();
     }
 
     public class RegistrationInput
     {
-        [Required(ErrorMessage = "Naam is verplicht")]
-        [StringLength(100, ErrorMessage = "Maximaal 100 tekens")]
+        [Required(ErrorMessage = "Name is obliged")]
+        [StringLength(100, ErrorMessage = "Maximum 100 characters")]
         public string AttendeeName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "E‑mail is verplicht")]
-        [EmailAddress(ErrorMessage = "Ongeldig e‑mailadres")]
-        [StringLength(200, ErrorMessage = "Maximaal 200 tekens")]
+        [Required(ErrorMessage = "E‑mail is obliged")]
+        [EmailAddress(ErrorMessage = "Invalid e‑mailadres")]
+        [StringLength(200, ErrorMessage = "Maximum 200 characters")]
         public string Email { get; set; } = string.Empty;
     }
 }
